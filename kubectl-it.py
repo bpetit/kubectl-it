@@ -79,7 +79,7 @@ class KubectlIt(object):
                                             self.__argv[2], config,
                                             {
                                                 'filename': "{}_kube.config".format(name),
-                                                'content': "test"
+                                                'content': self.__generate_kubeconfig(i, kcfg_data)
                                             }
                                         )
                                     }
@@ -100,15 +100,46 @@ class KubectlIt(object):
             print("Config file syntax is not good, or file is empty.")
             print("Error: {}".format(err))
             exit(2)
+
+    def __generate_kubeconfig(self, context, kubeconfig):
+        content = {
+            'apiVersion': 'v1',
+            'clusters': [],
+            'contexts': [],
+            'users': []
+        }
+        for c in kubeconfig['clusters']:
+            if context['context']['cluster'] == c['name']:
+                content['clusters'].append(
+                    {
+                        'name': c['name'],
+                        'cluster': c['cluster']
+                    }
+                )
+        for u in kubeconfig['users']:
+            if context['context']['user'] == u['name']:
+                content['users'].append(
+                    {
+                        'name': u['name'],
+                        'user': u['user']
+                    }
+                )
+        content['contexts'].append(
+            {
+                'name': context['name'],
+                'context': context['context']
+            }
+        )
+        return content
     
     def __write_json_file_from_dict(self, source_dict, file_path):
         with open(file_path, 'w') as fd:
-            json.dump(source_dict, fd, indent=1)
+            json.dump(source_dict, fd, indent=4)
             fd.close()
     
     def __write_yaml_file_from_dict(self, source_dict, file_path):
         with open(file_path, 'w') as fd:
-            yaml.dump(source_dict, file_path, default_flow_style=False)
+            yaml.dump(source_dict, fd, default_flow_style=False)
             fd.close()
 
     def __create_config_path(self, config_path, tree):
@@ -132,9 +163,14 @@ class KubectlIt(object):
             newpath = "{}/{}".format(newpath, elmt)
             if not os.path.exists(newpath):
                 os.makedirs(newpath)
-        with open("{}/{}".format(newpath, content['filename']), "w") as fd:
-            fd.write(content['content'])
-            fd.close()
+        pprint(content['content'])
+        self.__write_yaml_file_from_dict(
+            content['content'],
+            "{}/{}".format(newpath, content['filename'])
+        )
+        #with open("{}/{}".format(newpath, content['filename']), "w") as fd:
+        #    fd.write(content['content'])
+        #    fd.close()
         
         return newpath
     
