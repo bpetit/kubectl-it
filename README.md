@@ -30,7 +30,7 @@ kubectl it ls path/to
 * Website: https://arawbase.com
 * Twitter: [@bpetit\_](https://twitter.com/bpetit\_)
 * Github: [@bpetit](https://github.com/bpetit)
-* LinkedIn: [@bpetit](https://linkedin.com/in/bpetit)
+* LinkedIn: [@bepetit](https://linkedin.com/in/bepetit)
 
 ## 🤝 Contributing
 
