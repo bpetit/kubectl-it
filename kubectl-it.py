@@ -35,22 +35,12 @@ class KubectlIt(object):
         self.__argv = sys.argv
         self.__args = self.__parser.parse_args(sys.argv[1:])
         self.__config_base_path = "{}/.kube/kubectlit/configs".format(os.environ.get('HOME'))
-
-        self.__config_path = './config.json'
-
-        if not os.path.exists(self.__config_path) or os.stat(self.__config_path).st_size == 0:
-            self.__write_json_file_from_dict(dict(), self.__config_path)
-
-        with open(self.__config_path, "r") as fd:
-            config = json.loads(fd.read())
-            fd.close()
         
         if len(sys.argv) > 1:
-            getattr(self, sys.argv[1])(config)
+            getattr(self, sys.argv[1])()
     
-    def add(self, config):
+    def add(self):
         try:
-            self.__create_config_path(self.__argv[2], config)
             if len(self.__argv) > 3:
                 if self.__argv[3] == 'kubeconfig':
                     # we have to look at the kubeconfig file content and
@@ -74,19 +64,17 @@ class KubectlIt(object):
                                     and self.__args.final_name is not None
                                 ):
                                     name = self.__args.final_name
-                                # let's edit the configuration
-                                self.__get_config_leaf(self.__argv[2], config)[name] = {
-                                    'original_path': self.__args.path,
-                                    'original_name': i['name'],
-                                    'path': self.__create_path_and_file(
-                                        self.__argv[2], config,
-                                        {
-                                            'filename': "{}_kube.config".format(name),
-                                            'content': self.__generate_kubeconfig(i, kcfg_data)
-                                        }
-                                    ),
-                                    'type': 'kubeconfig'
-                                }
+                                # let's edit the configuration tree
+                                #    'original_path': self.__args.path,
+                                #    'original_name': i['name'],
+                                path = self.__create_path_and_file(
+                                    self.__argv[2],
+                                    {
+                                        'filename': "{}_kube.config".format(name),
+                                        'content': self.__generate_kubeconfig(i, kcfg_data)
+                                    }
+                                )
+                                #    'type': 'kubeconfig'
                                 found_context = True
                     
                         if not found_context:
@@ -104,58 +92,66 @@ class KubectlIt(object):
                     name = self.__args.name
 
                     filename = "{}_kube.config".format(name)
-                    pprint(config)
 
-                    self.__get_config_leaf(self.__argv[2], config)[name] = {
-                        'path': self.__create_path_and_file(
-                            self.__argv[2], config,
-                            {
-                                'filename': filename,
-                                'content': {}
-                            }
-                        ),
-                        'type': 'awseks',
-                        'profile': profile,
-                        'cluster_name': cluster_name,
-                        'region': region
-                    }
+                    self.__create_path_and_file(
+                        self.__argv[2],
+                        {
+                            'filename': filename,
+                            'content': {}
+                        }
+                    )
+                    #'type': 'awseks',
+                    #'profile': profile,
+                    #'cluster_name': cluster_name,
+                    #'region': region
                     self.__generate_kubeconfig_from_awseks(
-                        "{}/{}".format(self.__argv[2].replace('>', '/'), filename),
+                        "{}/{}".format(self.__argv[2], filename),
                         cluster_name, region, profile
                     )
-
-                    pprint(config)
-            
-            self.__write_json_file_from_dict(config, self.__config_path)
-
         except json.decoder.JSONDecodeError as err:
             print("Config file syntax is not good, or file is empty.")
             print("Error: {}".format(err))
             exit(2)
     
-    def ls(self, config):
+    def ls(self):
         path = self.__argv[2]
         try:
-            self.__print_tree(self.__get_config_leaf(path, config))
+            self.__print_tree(path)
         except KeyError as ke:
             print("Can't find context with path {}".format(path))
             print("Error: {}".format(ke))
-
-    def __print_tree(self, tree, d=0, sublevel=False):
-        if (tree == None or len(tree) == 0):
-            print(" " * d)
-        else:
-            for key, val in tree.items():
-                if (isinstance(val, dict)):
-                    if sublevel:
-                        print("─", key)
-                        print("  ", "└", end='')
-                    else:
-                        print(" " * d, "─", key)
-                        print(" " * d + "  ", "└", end='')
-                    self.__print_tree(val, d+1, True)
-                else:
-                    print(" " * d, "─", key, str('(') + val + str(')'))
+    
+    def run(self):
+        path = self.__argv[2]
+        cmd = self.__args.command
+        self.__run_on_tree(path, cmd)
+    
+    def __run_on_tree(self, path, cmd, d=0):
+        startpath = "{}/{}".format(self.__config_base_path, path)
+        for root, dirs, files in os.walk(startpath):
+            level = root.replace(startpath, '').count(os.sep)
+            indent = ' ' * 4 * (level)
+            print('{}{}/'.format(indent, os.path.basename(root)))
+            subindent = ' ' * 4 * (level + 1)
+            for f in files:
+                print('{}Should run {} on {}'.format(subindent, cmd, f))
+                self.__run(cmd, "{}/{}".format(root, f))
+    
+    def __run(self, cmd, path):
+        print("KUBECONFIG is {}".format(path))
+        kubernetes.config.load_kube_config(config_file=path)
+        print("Should run {}".format(cmd))
+        subprocess.check_call("KUBECONFIG={} {}".format(path, ' '.join(map(str, cmd))), shell=True)
+        
+    def __print_tree(self, path, d=0):
+        startpath = "{}/{}".format(self.__config_base_path, path)
+        for root, dirs, files in os.walk(startpath):
+            level = root.replace(startpath, '').count(os.sep)
+            indent = ' ' * 4 * (level)
+            print('{}{}/'.format(indent, os.path.basename(root)))
+            subindent = ' ' * 4 * (level + 1)
+            for f in files:
+                print('{}{}'.format(subindent, f))
     
     def __generate_kubeconfig_from_awseks(self, kubeconfig_path, cluster_name, region, profile):
         path = "{}/{}".format(self.__config_base_path, kubeconfig_path)
@@ -206,20 +202,19 @@ class KubectlIt(object):
         return content
 
     def __create_config_path(self, config_path, tree):
-        path_in_list = config_path.split('>')
+        path_in_list = config_path.split('/')
         last = tree
         for elmt in path_in_list:
             last[elmt] = {}
             last = last[elmt]
         return tree
 
-    def __create_path_and_file(self, config_path, tree, content):
+    def __create_path_and_file(self, config_path, content):
         """
         Creates the whole path of a file, including the parent folders.
         Returns the full path of the resulting file.
         """
-        path_in_list = config_path.split('>')
-        last = tree 
+        path_in_list = config_path.split('/')
         path = self.__config_base_path
         newpath = path
         for elmt in path_in_list:
@@ -233,13 +228,6 @@ class KubectlIt(object):
         
         return newpath
     
-    def __get_config_leaf(self, config_path, tree):
-        path_in_list = config_path.split('>')
-        last = tree
-        for elmt in path_in_list:
-            last = last[elmt]
-        return last
-
     def __prepare_add(self):
         self.__add_parser = self.__subparsers.add_parser(
             'add',
@@ -248,7 +236,7 @@ class KubectlIt(object):
         self.__add_parser.add_argument(
             'context_name',
             help="Name of the context to be added. \
-                Either a simple name or a config path with categories like \"cat1>subcatA>contextA\"."
+                Either a simple name or a config path with categories like \"cat1/subcatA/contextA\"."
         )
         self.__add_subparsers = self.__add_parser.add_subparsers(
             help="What kind of configuration to provide as context(s)."
@@ -295,8 +283,7 @@ class KubectlIt(object):
             'ls', help="Lists all contexts in a path."
         )
         self.__ls_parser.add_argument(
-            'name', help="The name of the context, as defined in the configuration, \
-                or a path like: \"path>to>target>contexts\""
+            'name', help="A path to one or multiple contexts in the tree like: \"path/to/target/contexts\""
         )
     
     def __prepare_run(self):
@@ -304,8 +291,10 @@ class KubectlIt(object):
             'run', help="Runs an action on multiple contexts."
         )
         self.__run_parser.add_argument(
-            'name', help="The name of the context, as defined in the configuration, \
-                or a path like: \"path>to>target>contexts\""
+            'path', help="A path to one or multiple contexts in the tree like: \"path/to/target/contexts\""
+        )
+        self.__run_parser.add_argument(
+            'command', help="Command to run on clusters selected by PATH.", nargs='+'
         )
     
     def __write_json_file_from_dict(self, source_dict, file_path):
