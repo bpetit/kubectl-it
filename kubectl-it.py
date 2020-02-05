@@ -130,28 +130,26 @@ class KubectlIt(object):
         startpath = "{}/{}".format(self.__config_base_path, path)
         for root, dirs, files in os.walk(startpath):
             level = root.replace(startpath, '').count(os.sep)
-            indent = ' ' * 4 * (level)
-            print('{}{}/'.format(indent, os.path.basename(root)))
-            subindent = ' ' * 4 * (level + 1)
             for f in files:
-                print('{}Should run {} on {}'.format(subindent, cmd, f))
                 self.__run(cmd, "{}/{}".format(root, f))
     
     def __run(self, cmd, path):
         print("KUBECONFIG is {}".format(path))
         kubernetes.config.load_kube_config(config_file=path)
-        print("Should run {}".format(cmd))
         subprocess.check_call("KUBECONFIG={} {}".format(path, ' '.join(map(str, cmd))), shell=True)
         
-    def __print_tree(self, path, d=0):
+    def __print_tree(self, path):
         startpath = "{}/{}".format(self.__config_base_path, path)
         for root, dirs, files in os.walk(startpath):
             level = root.replace(startpath, '').count(os.sep)
             indent = ' ' * 4 * (level)
-            print('{}{}/'.format(indent, os.path.basename(root)))
+            extra = ''
+            if level > 0:
+                extra = '└──'
+            print('{}{}{}/'.format(indent, extra, os.path.basename(root)))
             subindent = ' ' * 4 * (level + 1)
             for f in files:
-                print('{}{}'.format(subindent, f))
+                print('{}└──{}'.format(subindent, f))
     
     def __generate_kubeconfig_from_awseks(self, kubeconfig_path, cluster_name, region, profile):
         path = "{}/{}".format(self.__config_base_path, kubeconfig_path)

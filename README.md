@@ -13,7 +13,7 @@
 
 ## Usage
 
-kubectl it manages kubernetes contexts for you, as distinct kubeconfig files (let's forget this **gigantic** and unmanageable ~/.kube/.config).
+**kubectl it** manages kubernetes contexts for you, as distinct kubeconfig files (let's forget this **gigantic** and unmanageable ~/.kube/.config).
 
 Each time you add add a context, from either an original kubeconfig file:
 
