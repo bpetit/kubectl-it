@@ -159,8 +159,7 @@ class KubectlIt(object):
                     [
                         'aws', 'eks', 'update-kubeconfig',
                         '--region', region, '--name', cluster_name,
-                        '--profile', profile, '--kubeconfig',
-                        path
+                        '--profile', profile, '--kubeconfig', path
                     ]
                 )
                 return True
