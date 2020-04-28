@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to kubectl-it !</h1>
+<h1 align="center">kubectl it</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.1a-blue.svg?cacheSeconds=2592000" />
   <a href="#" target="_blank">
@@ -109,10 +109,7 @@ kubectl it ls /
 
 👤 **Benoit Petit**
 
-* Website: https://arawbase.com
-* Twitter: [@bpetit\_](https://twitter.com/bpetit\_)
-* Github: [@bpetit](https://github.com/bpetit)
-* LinkedIn: [@bepetit](https://linkedin.com/in/bepetit)
+* Website: https://bpetit.nce.re
 
 ## 🤝 Contributing
 
