@@ -9,7 +9,9 @@
   </a>
 </p>
 
-> Kubectl plugin to cleanly manage multiple contexts, coming from either existing kubeconfig files, or kubeconfig files generated from AWS EKS IAM authenticator.
+**Warning: this is work in progress**
+
+kubectl it is a kubectl plugin to make kubernetes clusters fleet management easier.
 
 ## Usage
 
