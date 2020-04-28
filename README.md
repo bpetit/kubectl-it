@@ -9,7 +9,19 @@
   </a>
 </p>
 
-> Kubectl plugin to cleanly manage multiple contexts, coming from either existing kubeconfig files, or kubeconfig files generated from AWS EKS IAM authenticator.
+> kubectl-it is a kubectl it to make management of kubernetes clusters fleet easier.
+
+## Installation
+
+### Manual installation
+
+```sh
+sudo curl -sL https://raw.githubusercontent.com/bpetit/kubectl-it/master/kubectl-it.py -o /usr/local/bin/kubectl-it && sudo chmod +x /usr/local/bin/kubectl-it
+```
+
+### With kubectl plugins package manager (krew)
+
+More to come...
 
 ## Usage
 
