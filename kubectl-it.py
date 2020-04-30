@@ -3,7 +3,7 @@
 import argparse
 import sys, os
 from pprint import pprint
-import json, yaml 
+import json, yaml
 import kubernetes
 import subprocess
 
@@ -20,7 +20,7 @@ class KubectlIt(object):
     __ls_parser = None
     __config_path = None
     __argv = None
-    
+
     def __init__(self):
         self.__parser = argparse.ArgumentParser(
             description=''
@@ -35,10 +35,10 @@ class KubectlIt(object):
         self.__argv = sys.argv
         self.__args = self.__parser.parse_args(sys.argv[1:])
         self.__config_base_path = "{}/.kube/kubectlit/configs".format(os.environ.get('HOME'))
-        
+
         if len(sys.argv) > 1:
             getattr(self, sys.argv[1])()
-    
+
     def add(self):
         try:
             if len(self.__argv) > 3:
@@ -48,7 +48,7 @@ class KubectlIt(object):
                     # if the kubeconfig containts multiple contexts
                     with open(self.__args.path, 'r') as kcfg:
                         kcfg_data = yaml.safe_load(kcfg)
-                        
+
                         contexts_from_current_config, current_context = kubernetes.config.list_kube_config_contexts(self.__args.path)
 
                         found_context = False
@@ -76,7 +76,7 @@ class KubectlIt(object):
                                 )
                                 #    'type': 'kubeconfig'
                                 found_context = True
-                    
+
                         if not found_context:
                             # if we didnt
                             print("Couldn't find requested context {} in {}.".format(
@@ -88,7 +88,7 @@ class KubectlIt(object):
                 elif self.__argv[3] == 'awseks':
                     profile = self.__args.profile
                     cluster_name = self.__args.cluster_name
-                    region = self.__args.region    
+                    region = self.__args.region
                     name = self.__args.name
 
                     filename = "{}_kube.config".format(name)
@@ -100,10 +100,6 @@ class KubectlIt(object):
                             'content': {}
                         }
                     )
-                    #'type': 'awseks',
-                    #'profile': profile,
-                    #'cluster_name': cluster_name,
-                    #'region': region
                     self.__generate_kubeconfig_from_awseks(
                         "{}/{}".format(self.__argv[2], filename),
                         cluster_name, region, profile
@@ -112,7 +108,7 @@ class KubectlIt(object):
             print("Config file syntax is not good, or file is empty.")
             print("Error: {}".format(err))
             exit(2)
-    
+
     def ls(self):
         path = self.__argv[2]
         try:
@@ -120,37 +116,48 @@ class KubectlIt(object):
         except KeyError as ke:
             print("Can't find context with path {}".format(path))
             print("Error: {}".format(ke))
-    
+
     def run(self):
         path = self.__argv[2]
         cmd = self.__args.command
         self.__run_on_tree(path, cmd)
-    
+
     def __run_on_tree(self, path, cmd, d=0):
-        startpath = "{}/{}".format(self.__config_base_path, path)
+        #startpath = os.path.join(self.__config_base_path, path)
         for root, dirs, files in os.walk(startpath):
             level = root.replace(startpath, '').count(os.sep)
             for f in files:
                 self.__run(cmd, "{}/{}".format(root, f))
-    
+
     def __run(self, cmd, path):
         print("KUBECONFIG is {}".format(path))
         kubernetes.config.load_kube_config(config_file=path)
         subprocess.check_call("KUBECONFIG={} {}".format(path, ' '.join(map(str, cmd))), shell=True)
-        
+
+    def __get_kubeconfig_name(self, path):
+        filename = os.path.basename(path)
+        filename = os.path.basename(path).split('_')[0]
+        return filename
+
     def __print_tree(self, path):
-        startpath = "{}/{}".format(self.__config_base_path, path)
-        for root, dirs, files in os.walk(startpath):
-            level = root.replace(startpath, '').count(os.sep)
-            indent = ' ' * 4 * (level)
-            extra = ''
-            if level > 0:
-                extra = '└──'
-            print('{}{}{}/'.format(indent, extra, os.path.basename(root)))
-            subindent = ' ' * 4 * (level + 1)
-            for f in files:
-                print('{}└──{}'.format(subindent, f))
-    
+        #startpath = "{}/{}".format(self.__config_base_path, path)
+        startpath = os.path.join(self.__config_base_path, path[1:])
+        # if it is a complete path to a file
+        if os.path.isfile(startpath):
+            print(self.__get_kubeconfig_name(path))
+        # if its a folder path
+        else:
+            for root, dirs, files in os.walk(startpath):
+                level = root.replace(startpath, '').count(os.sep)
+                indent = ' ' * 4 * (level)
+                extra = ''
+                if level > 0:
+                    extra = '└──'
+                print('{}{}{}/'.format(indent, extra, os.path.basename(root)))
+                subindent = ' ' * 4 * (level + 1)
+                for f in files:
+                    print('{}└──{}'.format(subindent, f))
+
     def __generate_kubeconfig_from_awseks(self, kubeconfig_path, cluster_name, region, profile):
         path = "{}/{}".format(self.__config_base_path, kubeconfig_path)
         if os.path.exists(path):
@@ -190,7 +197,7 @@ class KubectlIt(object):
                     }
                 )
         content['contexts'].append(
-            { 
+            {
                 'name': context['name'],
                 'context': context['context']
             }
@@ -222,9 +229,9 @@ class KubectlIt(object):
             content['content'],
             "{}/{}".format(newpath, content['filename'])
         )
-        
+
         return newpath
-    
+
     def __prepare_add(self):
         self.__add_parser = self.__subparsers.add_parser(
             'add',
@@ -274,7 +281,7 @@ class KubectlIt(object):
             '--name',
             help="Final name of the context to be added."
         )
-    
+
     def __prepare_ls(self):
         self.__ls_parser = self.__subparsers.add_parser(
             'ls', help="Lists all contexts in a path."
@@ -282,7 +289,7 @@ class KubectlIt(object):
         self.__ls_parser.add_argument(
             'name', help="A path to one or multiple contexts in the tree like: \"path/to/target/contexts\""
         )
-    
+
     def __prepare_run(self):
         self.__run_parser = self.__subparsers.add_parser(
             'run', help="Runs an action on multiple contexts."
@@ -293,12 +300,12 @@ class KubectlIt(object):
         self.__run_parser.add_argument(
             'command', help="Command to run on clusters selected by PATH.", nargs='+'
         )
-    
+
     def __write_json_file_from_dict(self, source_dict, file_path):
         with open(file_path, 'w') as fd:
             json.dump(source_dict, fd, indent=4)
             fd.close()
-    
+
     def __write_yaml_file_from_dict(self, source_dict, file_path):
         with open(file_path, 'w') as fd:
             yaml.dump(source_dict, fd, default_flow_style=False)
