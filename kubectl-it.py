@@ -64,9 +64,6 @@ class KubectlIt(object):
                                     and self.__args.final_name is not None
                                 ):
                                     name = self.__args.final_name
-                                # let's edit the configuration tree
-                                #    'original_path': self.__args.path,
-                                #    'original_name': i['name'],
                                 path = self.__create_path_and_file(
                                     self.__argv[2],
                                     {
@@ -74,7 +71,6 @@ class KubectlIt(object):
                                         'content': self.__generate_kubeconfig(i, kcfg_data)
                                     }
                                 )
-                                #    'type': 'kubeconfig'
                                 found_context = True
 
                         if not found_context:
@@ -156,7 +152,7 @@ class KubectlIt(object):
                 print('{}{}{}/'.format(indent, extra, os.path.basename(root)))
                 subindent = ' ' * 4 * (level + 1)
                 for f in files:
-                    print('{}└──{}'.format(subindent, f))
+                    print('{}└──{}'.format(subindent, self.__get_kubeconfig_name(f)))
 
     def __generate_kubeconfig_from_awseks(self, kubeconfig_path, cluster_name, region, profile):
         path = "{}/{}".format(self.__config_base_path, kubeconfig_path)
