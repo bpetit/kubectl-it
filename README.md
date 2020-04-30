@@ -1,4 +1,4 @@
-<h1 align="center">kubectl-it</h1>
+# kubectl-it
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.1a-blue.svg?cacheSeconds=2592000" />
   <a href="#" target="_blank">
