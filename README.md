@@ -99,10 +99,7 @@ kubectl it ls /
 
 👤 **Benoit Petit**
 
-* Website: https://arawbase.com
-* Twitter: [@bpetit\_](https://twitter.com/bpetit\_)
-* Github: [@bpetit](https://github.com/bpetit)
-* LinkedIn: [@bepetit](https://linkedin.com/in/bepetit)
+* Website: https://bpetit.nce.re
 
 ## 🤝 Contributing
 
